@@ -97,10 +97,12 @@ export const CommandService = {
    * Sets status to 'confirmed'. Returns updated command or null.
    */
   async confirmCommand(
-    callbackId: string,
+    commandIdOrCallbackId: string,
     telegramMessageId: string,
   ): Promise<Command | null> {
-    const command = CommandRepository.findByCallbackId(callbackId);
+    const command =
+      CommandRepository.findById(commandIdOrCallbackId) ||
+      CommandRepository.findByCallbackId(commandIdOrCallbackId);
     if (!command) return null;
     if (command.status !== 'pending') return null;
 
@@ -119,8 +121,10 @@ export const CommandService = {
   /**
    * Step 3: User cancelled.
    */
-  async cancelCommand(commandId: string): Promise<Command | null> {
-    const command = CommandRepository.findById(commandId);
+  async cancelCommand(commandIdOrCallbackId: string): Promise<Command | null> {
+    const command =
+      CommandRepository.findById(commandIdOrCallbackId) ||
+      CommandRepository.findByCallbackId(commandIdOrCallbackId);
     if (!command) return null;
     if (!['pending', 'confirmed'].includes(command.status)) return null;
 
