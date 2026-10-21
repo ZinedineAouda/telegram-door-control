@@ -24,6 +24,14 @@
 #include <ESP8266HTTPClient.h>
 #include <ArduinoJson.h>
 #include <time.h>
+
+// =============================================================================
+//  >>> STEP 1: ENTER YOUR WI-FI CREDENTIALS RIGHT HERE <<<
+// =============================================================================
+#define WIFI_SSID         "Wi-Fi"        // <-- Type your Wi-Fi name
+#define WIFI_PASSWORD     "gizmoooo"    // <-- Type your Wi-Fi password
+// =============================================================================
+
 #include "door_controller_config.h"
 
 // -----------------------------------------------------------------------------
@@ -150,6 +158,8 @@ time_t parseIso8601(const String& isoStr) {
 bool makeSecurePost(const String& path, const String& jsonPayload, String& responseBody, int& httpCodeOut) {
   WiFiClientSecure client;
   client.setTimeout(HTTP_TIMEOUT_MS);
+  // Allocate smaller SSL buffers for faster BearSSL crypto & less RAM fragmentation
+  client.setBufferSizes(1024, 512);
 
   // Set SHA-1 fingerprint for certificate verification, or setInsecure for dynamic certs
   #if defined(TLS_FINGERPRINT)

@@ -18,7 +18,7 @@ interface RateLimitEntry {
 }
 const rateLimitMap = new Map<string, RateLimitEntry>();
 
-const RATE_LIMIT_MAX = 60;
+const RATE_LIMIT_MAX = 180;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 
 export function verifyDeviceKey(req: Request, res: Response, next: NextFunction): void {

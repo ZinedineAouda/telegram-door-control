@@ -48,9 +48,9 @@
 // ------------------------------------------------------------
 #define PULSE_DURATION_MS      400    // Default relay pulse; server can override per-command
 #define HEARTBEAT_INTERVAL_MS  30000  // How often to POST /api/device/heartbeat
-#define POLL_INTERVAL_MS       5000   // How often to POST /api/device/command/pending
+#define POLL_INTERVAL_MS       1000   // Fast 1-second polling for instant responsiveness
 #define WIFI_RECONNECT_MS      10000  // How often to retry WiFi if disconnected
-#define HTTP_TIMEOUT_MS        8000   // Timeout for each HTTP request
+#define HTTP_TIMEOUT_MS        4000   // Timeout for each HTTP request
 
 // ------------------------------------------------------------
 // Firmware version — update when flashing a new build
