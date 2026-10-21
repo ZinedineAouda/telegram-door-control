@@ -36,10 +36,9 @@
 // ------------------------------------------------------------
 // Hardware
 // ------------------------------------------------------------
-// GPIO5 = D1 on NodeMCU pinout.
-// Safe choice: not a strapping pin, defaults LOW at boot,
-// so relay stays OFF until explicitly commanded.
-#define RELAY_PIN         5
+// GPIO4 = pin labeled 'gp104' on the ESP8266 header block.
+// Safe choice: general-purpose I/O, not a boot strapping pin.
+#define RELAY_PIN         4
 // true  = relay module activates when pin is HIGH
 // false = relay module activates when pin is LOW  (most 5V optocoupled relay modules)
 #define RELAY_ACTIVE_HIGH false
