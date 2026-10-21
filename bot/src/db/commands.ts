@@ -101,6 +101,60 @@ export const CommandRepository = {
     return this.findById(id)!;
   },
 
+  /**
+   * Create a command directly in 'confirmed' status (for instant 1-tap commands).
+   */
+  createInstant(params: {
+    deviceId: string;
+    requestedByUserId: string;
+    commandType: CommandType;
+    telegramChatId: string;
+    telegramMessageId?: string;
+    idempotencyKey: string;
+  }): Command {
+    const db = getDb();
+    const id = randomUUID();
+
+    db.prepare(
+      `INSERT INTO commands
+         (id, device_id, requested_by_user_id, command_type, status,
+          confirmed_at, expires_at, telegram_chat_id, telegram_message_id,
+          idempotency_key)
+       VALUES
+         (?, ?, ?, ?, 'confirmed',
+          datetime('now'), datetime('now', ? || ' seconds'),
+          ?, ?, ?)`
+    ).run(
+      id,
+      params.deviceId,
+      params.requestedByUserId,
+      params.commandType,
+      String(EXECUTION_TTL_SECONDS),
+      params.telegramChatId,
+      params.telegramMessageId ?? null,
+      params.idempotencyKey
+    );
+
+    return this.findById(id)!;
+  },
+
+  /** Find active command currently in flight ('confirmed' or 'delivered') for a device. */
+  findActiveInFlightForDevice(deviceId: string): Command | null {
+    const db = getDb();
+    const row = db
+      .prepare(
+        `SELECT ${ALL_COLS} FROM commands
+         WHERE device_id = ?
+           AND status IN ('confirmed', 'delivered')
+           AND datetime(expires_at) > datetime('now')
+         ORDER BY created_at DESC
+         LIMIT 1`
+      )
+      .get(deviceId) as Record<string, unknown> | undefined;
+
+    return row ? rowToCommand(row) : null;
+  },
+
   /** Find a command by its UUID. Returns null if not found. */
   findById(id: string): Command | null {
     const db = getDb();

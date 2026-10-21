@@ -58,14 +58,13 @@ function isAuthorized(telegramUserId: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Shared command-request flow (used by /press, /open, /close)
+// Shared command-request flow (Instant 1-tap execution)
 // ---------------------------------------------------------------------------
 
 async function handleCommandRequest(
   bot: TelegramBot,
   msg: TelegramBot.Message,
   commandType: CommandType,
-  extraWarning: string = '',
 ): Promise<void> {
   const chatId = msg.chat.id;
   const telegramUserId = String(msg.from?.id ?? '');
@@ -89,7 +88,7 @@ async function handleCommandRequest(
     details: { commandType, messageId: msg.message_id },
   });
 
-  const { command, deviceOnline, error } = await CommandService.requestCommand({
+  const { command, error } = await CommandService.requestInstantCommand({
     telegramUserId,
     commandType,
     telegramChatId,
@@ -102,15 +101,17 @@ async function handleCommandRequest(
   }
 
   if (error === 'rate_limited') {
-    await bot.sendMessage(chatId, '⏱ Too many requests. Please wait before sending another command.');
+    await bot.sendMessage(chatId, '⏱ Too many requests. Please wait a moment before sending another command.');
     return;
   }
 
-  if (error === 'already_pending') {
-    await bot.sendMessage(
-      chatId,
-      '⚠️ A command is already pending confirmation. Use /cancel to cancel it first.',
-    );
+  if (error === 'already_in_progress') {
+    await bot.sendMessage(chatId, '⏳ A button press is already being processed. Please wait a moment.');
+    return;
+  }
+
+  if (error === 'device_offline') {
+    await bot.sendMessage(chatId, '⚠️ Door controller is offline. No command has been sent.');
     return;
   }
 
@@ -120,28 +121,15 @@ async function handleCommandRequest(
   }
 
   if (!command) {
-    await bot.sendMessage(chatId, '❌ Failed to create command. Please try again.');
+    await bot.sendMessage(chatId, '❌ Failed to queue command. Please try again.');
     return;
   }
 
-  if (!deviceOnline) {
-    // Warn immediately
-    await bot.sendMessage(chatId, '⚠️ Door controller is offline. No command has been sent.');
-    // Cancel the command since the device is offline
-    await CommandService.cancelCommand(command.id);
-    return;
-  }
-
-  // Build confirmation message
-  const baseText =
-    '🚪 Send one button press to the door controller?\n\n' +
-    '⚠️ This simulates pressing the physical button. The door will toggle its current state.';
-
-  const fullText = extraWarning ? `${baseText}${extraWarning}` : baseText;
-
-  await bot.sendMessage(chatId, fullText, {
-    reply_markup: confirmKeyboard(command.id),
-  });
+  await bot.sendMessage(
+    chatId,
+    '⚡ *Button press queued.* Device is executing the command...',
+    { parse_mode: 'Markdown' },
+  );
 }
 
 // ---------------------------------------------------------------------------

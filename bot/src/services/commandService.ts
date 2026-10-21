@@ -93,6 +93,71 @@ export const CommandService = {
   },
 
   /**
+   * Instant 1-tap command request: skips confirmation, directly marks command
+   * as 'confirmed' and ready for the device to pick up on its next poll cycle.
+   */
+  async requestInstantCommand(params: {
+    telegramUserId: string;
+    commandType: CommandType;
+    telegramChatId: string;
+    updateId: number;
+  }): Promise<{ command: Command | null; deviceOnline: boolean; error?: string }> {
+    const { telegramUserId, commandType, telegramChatId, updateId } = params;
+
+    const user = UserRepository.findByTelegramId(telegramUserId);
+    if (!user || !user.isActive) {
+      return { command: null, deviceOnline: false, error: 'unauthorized' };
+    }
+
+    const allowed = RateLimiter.check(telegramUserId, commandType);
+    if (!allowed) {
+      return { command: null, deviceOnline: false, error: 'rate_limited' };
+    }
+
+    const device = getActiveDevice();
+    const deviceOnline = device ? isDeviceOnline(device) : false;
+
+    if (!device) {
+      return { command: null, deviceOnline: false, error: 'no_device' };
+    }
+
+    if (!deviceOnline) {
+      return { command: null, deviceOnline: false, error: 'device_offline' };
+    }
+
+    // Anti-toggle protection: prevent queueing if a command is already in flight
+    const inFlight = CommandRepository.findActiveInFlightForDevice(device.id);
+    if (inFlight) {
+      return { command: null, deviceOnline: true, error: 'already_in_progress' };
+    }
+
+    const idempotencyKey = `tg-instant-${updateId}`;
+    const existing = CommandRepository.findByIdempotencyKey(idempotencyKey);
+    if (existing) {
+      return { command: existing, deviceOnline };
+    }
+
+    const command = CommandRepository.createInstant({
+      deviceId: device.id,
+      requestedByUserId: telegramUserId,
+      commandType,
+      telegramChatId,
+      idempotencyKey,
+    });
+
+    AuditRepository.log({
+      eventType: 'command_requested_instant',
+      telegramUserId,
+      commandId: command.id,
+      details: { commandType },
+    });
+
+    RateLimiter.record(telegramUserId, commandType);
+
+    return { command, deviceOnline };
+  },
+
+  /**
    * Step 2: User confirmed the command via inline button.
    * Sets status to 'confirmed'. Returns updated command or null.
    */
