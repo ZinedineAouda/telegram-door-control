@@ -149,6 +149,15 @@ async function handleCommandRequest(
 // ---------------------------------------------------------------------------
 
 export function setupHandlers(bot: TelegramBot): void {
+  // Set the Telegram command menu for autocomplete
+  bot.setMyCommands([
+    { command: 'press', description: 'Simulate physical push button (toggle door)' },
+    { command: 'status', description: 'Show device connection status' },
+    { command: 'history', description: 'Show last 10 commands' },
+    { command: 'cancel', description: 'Cancel pending command' },
+    { command: 'help', description: 'Show help & safety notes' },
+  ]).catch((err) => console.warn('[Bot] Failed to set command menu:', err.message));
+
   // -------------------------------------------------------------------------
   // /start
   // -------------------------------------------------------------------------
@@ -165,14 +174,12 @@ export function setupHandlers(bot: TelegramBot): void {
     const welcomeText =
       `👋 Hello, ${firstName}! Welcome to the Door Control Bot.\n\n` +
       `*Available commands:*\n` +
-      `/press — Send a button press (door toggles)\n` +
-      `/open — Send a button press (with open warning)\n` +
-      `/close — Send a button press (with close warning)\n` +
-      `/status — Show device status\n` +
+      `/press — Send one button press (toggles the push-button switch)\n` +
+      `/status — Show device status & last heartbeat\n` +
       `/history — Show your last 10 commands\n` +
       `/cancel — Cancel your pending command\n` +
       `/help — Show help information\n\n` +
-      `⚠️ *Important:* This bot simulates pressing the physical button. It does NOT verify the actual door position.`;
+      `⚠️ *Note:* This door operates via a momentary push button. Each press toggles the door state.`;
 
     await bot.sendMessage(chatId, welcomeText, { parse_mode: 'Markdown' });
   });
@@ -192,19 +199,15 @@ export function setupHandlers(bot: TelegramBot): void {
     const helpText =
       `🚪 *Door Control Bot — Help*\n\n` +
       `*Commands:*\n` +
-      `/press — Simulate one button press. The door will toggle its current state.\n` +
-      `/open — Same as /press, but reminds you it cannot guarantee the door will open.\n` +
-      `/close — Same as /press, but reminds you it cannot guarantee the door will close.\n` +
+      `/press — Simulate pressing the physical door button.\n` +
       `/status — Show device online status and last heartbeat.\n` +
       `/history — Show your last 10 commands and their outcomes.\n` +
       `/cancel — Cancel a pending (unconfirmed) command.\n\n` +
-      `*⚠️ Safety warnings:*\n` +
-      `• /open and /close are *BUTTON PRESS SIMULATIONS only*. They do NOT directly control the door direction.\n` +
-      `• The controller receives one relay pulse — equivalent to pressing the physical button.\n` +
-      `• The door will *toggle* its current state — if it is open, it will close, and vice versa.\n` +
-      `• *Actual door position is NOT verified.* There is no position sensor.\n` +
-      `• If execution status is uncertain, do NOT retry automatically — a second press may reverse the door unexpectedly.\n` +
-      `• Always visually verify the door position before issuing another command.`;
+      `*⚠️ Operational Notes:*\n` +
+      `• The controller receives one relay pulse (400ms) — simulating the physical button.\n` +
+      `• The door *toggles* its state with each press.\n` +
+      `• *Actual door position is NOT verified* (there is no open/close sensor installed).\n` +
+      `• If execution status is ever uncertain, do NOT retry automatically — verify visually first.`;
 
     await bot.sendMessage(chatId, helpText, { parse_mode: 'Markdown' });
   });
@@ -217,26 +220,22 @@ export function setupHandlers(bot: TelegramBot): void {
   });
 
   // -------------------------------------------------------------------------
-  // /open
+  // /open and /close — redirect to /press
   // -------------------------------------------------------------------------
-  bot.onText(/\/open/, async (msg) => {
-    await handleCommandRequest(
-      bot,
-      msg,
-      'open',
-      '\n\n⚠️ WARNING: /open only sends a button press — it cannot guarantee the door will open.',
-    );
-  });
+  bot.onText(/\/(open|close)/, async (msg) => {
+    const chatId = msg.chat.id;
+    const telegramUserId = String(msg.from?.id ?? '');
 
-  // -------------------------------------------------------------------------
-  // /close
-  // -------------------------------------------------------------------------
-  bot.onText(/\/close/, async (msg) => {
-    await handleCommandRequest(
-      bot,
-      msg,
-      'close',
-      '\n\n⚠️ WARNING: /close only sends a button press — it cannot guarantee the door will close.',
+    if (!telegramUserId || !isAuthorized(telegramUserId)) {
+      await bot.sendMessage(chatId, '⛔ You are not authorized to control this device.');
+      return;
+    }
+
+    await bot.sendMessage(
+      chatId,
+      'ℹ️ *Note:* This door is controlled by a single momentary push button (toggle switch).\n\n' +
+      'There are no separate open/close circuits. Use `/press` to trigger the button.',
+      { parse_mode: 'Markdown' }
     );
   });
 
