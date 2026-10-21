@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: telegram-door-control
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: cd bot && npm install && npm run build
+    startCommand: cd bot && node dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: development
+      - key: PULSE_DURATION_MS
+        value: 400
+      - key: BOT_TOKEN
+        sync: false
+      - key: ALLOWED_TELEGRAM_USER_IDS
+        sync: false
+      - key: DEVICE_KEY
+        sync: false
