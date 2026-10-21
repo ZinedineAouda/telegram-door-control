@@ -58,7 +58,7 @@ function isAuthorized(telegramUserId: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Shared command-request flow (Instant 1-tap execution)
+// Shared command-request flow (with Confirm / Cancel buttons)
 // ---------------------------------------------------------------------------
 
 async function handleCommandRequest(
@@ -88,7 +88,7 @@ async function handleCommandRequest(
     details: { commandType, messageId: msg.message_id },
   });
 
-  const { command, error } = await CommandService.requestInstantCommand({
+  const { command, deviceOnline, error } = await CommandService.requestCommand({
     telegramUserId,
     commandType,
     telegramChatId,
@@ -101,17 +101,15 @@ async function handleCommandRequest(
   }
 
   if (error === 'rate_limited') {
-    await bot.sendMessage(chatId, '⏱ Too many requests. Please wait a moment before sending another command.');
+    await bot.sendMessage(chatId, '⏱ Too many requests. Please wait before sending another command.');
     return;
   }
 
-  if (error === 'already_in_progress') {
-    await bot.sendMessage(chatId, '⏳ A button press is already being processed. Please wait a moment.');
-    return;
-  }
-
-  if (error === 'device_offline') {
-    await bot.sendMessage(chatId, '⚠️ Door controller is offline. No command has been sent.');
+  if (error === 'already_pending') {
+    await bot.sendMessage(
+      chatId,
+      '⚠️ A command is already pending confirmation. Use /cancel to cancel it first.',
+    );
     return;
   }
 
@@ -121,14 +119,25 @@ async function handleCommandRequest(
   }
 
   if (!command) {
-    await bot.sendMessage(chatId, '❌ Failed to queue command. Please try again.');
+    await bot.sendMessage(chatId, '❌ Failed to create command. Please try again.');
     return;
   }
 
+  if (!deviceOnline) {
+    await bot.sendMessage(chatId, '⚠️ Door controller is offline. No command has been sent.');
+    await CommandService.cancelCommand(command.id);
+    return;
+  }
+
+  // Send confirmation prompt with inline Confirm & Cancel buttons
   await bot.sendMessage(
     chatId,
-    '⚡ *Button press queued.* Device is executing the command...',
-    { parse_mode: 'Markdown' },
+    '🚪 *Send one button press to the door controller?*\n\n' +
+    '⚠️ This simulates pressing the physical button. The door will toggle its current state.',
+    {
+      parse_mode: 'Markdown',
+      reply_markup: confirmKeyboard(command.id),
+    },
   );
 }
 
