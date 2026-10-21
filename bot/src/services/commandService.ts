@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 import { CommandRepository } from '../db/commands';
 import { DeviceRepository } from '../db/devices';
 import { AuditRepository, RateLimiter } from '../db/audit';

@@ -1,6 +1,6 @@
 import { getDb } from './database';
 import bcrypt from 'bcryptjs';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'node:crypto';
 import { Device, DeviceHeartbeat } from '../types';
 
 const BCRYPT_ROUNDS = 10;
@@ -91,7 +91,7 @@ export const DeviceRepository = {
     plaintextKey: string
   ): { device: Device; plaintextKey: string } {
     const db = getDb();
-    const id = uuidv4();
+    const id = randomUUID();
     const keyHash = bcrypt.hashSync(plaintextKey, BCRYPT_ROUNDS);
 
     db.prepare(

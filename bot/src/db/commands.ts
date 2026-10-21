@@ -1,5 +1,5 @@
 import { getDb } from './database';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'node:crypto';
 import { Command, CommandType, CommandStatus, ExecutionResult } from '../types';
 
 // ---------------------------------------------------------------------------
@@ -75,8 +75,8 @@ export const CommandRepository = {
     idempotencyKey: string;
   }): Command {
     const db = getDb();
-    const id = uuidv4();
-    const callbackId = uuidv4();
+    const id = randomUUID();
+    const callbackId = randomUUID();
 
     db.prepare(
       `INSERT INTO commands
