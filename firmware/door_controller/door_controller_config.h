@@ -7,10 +7,12 @@
 // ============================================================
 
 // ------------------------------------------------------------
-// WiFi credentials
+// WiFi credentials (defined in door_controller.ino or here)
 // ------------------------------------------------------------
+#ifndef WIFI_SSID
 #define WIFI_SSID         "YOUR_WIFI_SSID"
 #define WIFI_PASSWORD     "YOUR_WIFI_PASSWORD"
+#endif
 
 // ------------------------------------------------------------
 // Server connection
@@ -38,9 +40,9 @@
 // Safe choice: not a strapping pin, defaults LOW at boot,
 // so relay stays OFF until explicitly commanded.
 #define RELAY_PIN         5
-// true  = relay module activates when pin is HIGH (most optocoupler modules)
-// false = relay module activates when pin is LOW  (active-LOW modules)
-#define RELAY_ACTIVE_HIGH true
+// true  = relay module activates when pin is HIGH
+// false = relay module activates when pin is LOW  (most 5V optocoupled relay modules)
+#define RELAY_ACTIVE_HIGH false
 
 // ------------------------------------------------------------
 // Timing (milliseconds)
