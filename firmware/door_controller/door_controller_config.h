@@ -15,32 +15,21 @@
 // ------------------------------------------------------------
 // Server connection
 // ------------------------------------------------------------
-#define API_HOST          "yourdomain.com"
-#define API_PORT          8443
+#define API_HOST          "telegram-door-control.onrender.com"
+#define API_PORT          443
 
 // ------------------------------------------------------------
 // Device authentication
 // NEVER put the Telegram bot token here.
-// Generate a long random key (e.g. openssl rand -hex 32)
-// and register it in your backend.
 // ------------------------------------------------------------
-#define DEVICE_KEY        "YOUR_LONG_RANDOM_DEVICE_KEY"
+#define DEVICE_KEY        "d9c72e91a03f4826b1582e3c098a123f"
 
 // ------------------------------------------------------------
 // TLS: SHA-1 fingerprint of your server's TLS certificate.
-// How to get it (run on Linux/Mac):
-//
-//   openssl s_client -connect yourdomain.com:8443 </dev/null 2>/dev/null \
-//     | openssl x509 -fingerprint -sha1 -noout
-//
-// Example output:
-//   SHA1 Fingerprint=AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD
-//
-// Copy the part after "SHA1 Fingerprint=" and paste below.
-// NOTE: This fingerprint changes every time you renew your certificate.
-//       Remember to re-flash after renewal.
+// Leave empty ("") when using Render / cloud hosting (Render auto-renews
+// Let's Encrypt certificates every 60-90 days).
 // ------------------------------------------------------------
-#define TLS_FINGERPRINT   "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD"
+#define TLS_FINGERPRINT   ""
 
 // ------------------------------------------------------------
 // Hardware

@@ -151,11 +151,14 @@ bool makeSecurePost(const String& path, const String& jsonPayload, String& respo
   WiFiClientSecure client;
   client.setTimeout(HTTP_TIMEOUT_MS);
 
-  // Set SHA-1 fingerprint for strict certificate verification
-  #if defined(TLS_FINGERPRINT) && strlen(TLS_FINGERPRINT) > 0
-    client.setFingerprint(TLS_FINGERPRINT);
+  // Set SHA-1 fingerprint for certificate verification, or setInsecure for dynamic certs
+  #if defined(TLS_FINGERPRINT)
+    if (strlen(TLS_FINGERPRINT) > 0 && strcmp(TLS_FINGERPRINT, "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD") != 0) {
+      client.setFingerprint(TLS_FINGERPRINT);
+    } else {
+      client.setInsecure();
+    }
   #else
-    // In development mode only; production requires fingerprint
     client.setInsecure();
   #endif
 
